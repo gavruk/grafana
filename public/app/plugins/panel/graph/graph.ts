@@ -124,7 +124,6 @@ class GraphElement {
       this.plot.clearSelection();
       return;
     }
-
     if ((ranges.ctrlKey || ranges.metaKey) && (this.dashboard.meta.canEdit || this.dashboard.meta.canMakeEditable)) {
       // Add annotation
       setTimeout(() => {
@@ -338,8 +337,18 @@ class GraphElement {
   }
 
   callPlot(options, incrementRenderCounter) {
+    const copied = [...this.sortedSeries];
+    copied.forEach(c => {
+      for (let i = 0; i < c.data.length; i++) {
+        let decimalPart = c.datapoints[i][4].toString();
+        while (decimalPart.length !== 6) {
+          decimalPart = '0' + decimalPart;
+        }
+        c.data[i][0] = `${c.datapoints[i][1]}.${decimalPart}`;
+      }
+    });
     try {
-      this.plot = $.plot(this.elem, this.sortedSeries, options);
+      this.plot = $.plot(this.elem, copied, options);
       if (this.ctrl.renderError) {
         delete this.ctrl.error;
         delete this.ctrl.inspector;
@@ -448,19 +457,51 @@ class GraphElement {
 
   addTimeAxis(options) {
     const ticks = this.panelWidth / 100;
-    const min = _.isUndefined(this.ctrl.range.from) ? null : this.ctrl.range.from.valueOf();
-    const max = _.isUndefined(this.ctrl.range.to) ? null : this.ctrl.range.to.valueOf();
+    let min = _.isUndefined(this.ctrl.range.from) ? null : this.ctrl.range.from.valueOf();
+    let max = _.isUndefined(this.ctrl.range.to) ? null : this.ctrl.range.to.valueOf();
 
-    options.xaxis = {
-      timezone: this.dashboard.getTimezone(),
-      show: this.panel.xaxis.show,
-      mode: 'time',
-      min: min,
-      max: max,
-      label: 'Datetime',
-      ticks: ticks,
-      timeformat: this.time_format(ticks, min, max),
-    };
+    if (this.ctrl.intervalMs >= 1) {
+      options.xaxis = {
+        timezone: this.dashboard.getTimezone(),
+        show: this.panel.xaxis.show,
+        mode: 'time',
+        min: min,
+        max: max,
+        label: 'Datetime',
+        ticks: ticks,
+        timeformat: this.time_format(ticks, min, max),
+      };
+    } else {
+      if (this.ctrl.range.from && this.ctrl.range.from._d._nanoseconds) {
+        if (min.toString().indexOf('.') > 1) {
+          min = min.toString();
+        } else {
+          min = min.toString() + '.' + this.ctrl.range.from._d._nanoseconds;
+        }
+      }
+      if (this.ctrl.range.to && this.ctrl.range.to._d._nanoseconds) {
+        if (max.toString().indexOf('.') > 1) {
+          max = max.toString();
+        } else {
+          max = max.toString() + '.' + this.ctrl.range.to._d._nanoseconds;
+        }
+      }
+
+      options.xaxis = {
+        timezone: this.dashboard.getTimezone(),
+        show: this.panel.xaxis.show,
+        //mode: 'time',
+        min: min,
+        max: max,
+        label: 'Datetime',
+        ticks: ticks,
+        tickFormatter: (tick, series) => {
+          const decimalPart = Math.round((tick % 1) * 1e4) / 1e4;
+          const msPart = Math.round(((tick / 1000) % 1) * 1000);
+          return msPart + decimalPart;
+        },
+      };
+    }
   }
 
   addXSeriesAxis(options) {
@@ -711,7 +752,7 @@ class GraphElement {
 
   time_format(ticks, min, max) {
     if (min && max && ticks) {
-      const range = max - min;
+      const range = +max - +min;
       const secPerTick = range / ticks / 1000;
       // Need have 10 milisecond margin on the day range
       // As sometimes last 24 hour dashboard evaluates to more than 86400000

@@ -64,22 +64,32 @@ export class TimeSrv {
   }
 
   private parseUrlParam(value) {
+    let date;
+    let nanoseconds;
     if (value.indexOf('now') !== -1) {
       return value;
     }
+    if (value.indexOf('.') !== -1) {
+      const parts = value.split('.');
+      nanoseconds = parts.length === 2 ? parts[1] : null;
+    }
     if (value.length === 8) {
-      return moment.utc(value, 'YYYYMMDD');
+      date = moment.utc(value, 'YYYYMMDD');
     }
     if (value.length === 15) {
-      return moment.utc(value, 'YYYYMMDDTHHmmss');
+      date = moment.utc(value, 'YYYYMMDDTHHmmss');
     }
 
     if (!isNaN(value)) {
       const epoch = parseInt(value, 10);
-      return moment.utc(epoch);
+      date = moment.utc(epoch);
     }
-
-    return null;
+    if (!date) {
+      return null;
+    }
+    date._nanoseconds = nanoseconds;
+    date._d._nanoseconds = nanoseconds;
+    return date;
   }
 
   private initTimeFromUrl() {
@@ -196,10 +206,18 @@ export class TimeSrv {
   timeRangeForUrl() {
     const range = this.timeRange().raw;
 
-    if (moment.isMoment(range.from)) {
+    // @ts-ignore:
+    if (moment.isMoment(range.from) && range.from._i) {
+      // @ts-ignore:
+      range.from = range.from._i.toString();
+    } else {
       range.from = range.from.valueOf().toString();
     }
-    if (moment.isMoment(range.to)) {
+    // @ts-ignore:
+    if (moment.isMoment(range.to) && range.to._i) {
+      // @ts-ignore:
+      range.to = range.to._i.toString();
+    } else {
       range.to = range.to.valueOf().toString();
     }
 
@@ -209,12 +227,13 @@ export class TimeSrv {
   timeRange(): TimeRange {
     // make copies if they are moment  (do not want to return out internal moment, because they are mutable!)
     const raw = {
-      from: moment.isMoment(this.time.from) ? moment(this.time.from) : this.time.from,
-      to: moment.isMoment(this.time.to) ? moment(this.time.to) : this.time.to,
+      //from: moment.isMoment(this.time.from) ? moment(this.time.from) : this.time.from,
+      //to: moment.isMoment(this.time.to) ? moment(this.time.to) : this.time.to,
+      from: this.time.from,
+      to: this.time.to,
     };
 
     const timezone = this.dashboard && this.dashboard.getTimezone();
-
     return {
       from: dateMath.parse(raw.from, false, timezone),
       to: dateMath.parse(raw.to, true, timezone),

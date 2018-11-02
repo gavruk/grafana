@@ -685,7 +685,16 @@ export class DashboardModel {
   }
 
   formatDate(date, format?) {
-    date = moment.isMoment(date) ? date : moment(date);
+    if (!date) {
+      date = moment();
+    }
+    if (typeof date === 'number') {
+      const nanos = date % 1;
+      date = moment(Math.round(date));
+      date._nanoseconds = nanos;
+      date._d._nanoseconds = nanos;
+      return date.toISOString();
+    }
     format = format || 'YYYY-MM-DD HH:mm:ss';
     const timezone = this.getTimezone();
 

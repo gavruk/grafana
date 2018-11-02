@@ -90,6 +90,7 @@ export class DataPanel extends Component<Props, State> {
         rangeRaw: timeRange.raw,
         interval: '1s',
         intervalMs: 60000,
+        intervalNs: 0,
         targets: queries,
         maxDataPoints: 500,
         scopedVars: {},

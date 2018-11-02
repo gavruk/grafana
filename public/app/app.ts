@@ -25,6 +25,36 @@ _.move = (array, fromIndex, toIndex) => {
   array.splice(toIndex, 0, array.splice(fromIndex, 1)[0]);
   return array;
 };
+// @ts-ignore
+moment.createFromInputFallback = config => {
+  config._d = new Date(Math.round(config._i));
+};
+const oldUtc = moment.prototype.utc;
+moment.prototype.utc = function(d) {
+  let nanoseconds = this._nanoseconds || this._d._nanoseconds;
+  if (!nanoseconds) {
+    nanoseconds = Math.round((this._i % 1) * 1e6);
+  }
+  const date = oldUtc.call(this, d);
+  date._nanoseconds = nanoseconds.toString();
+  date._d._nanoseconds = nanoseconds.toString();
+  return date;
+};
+const oldToISOString = moment.prototype.toISOString;
+moment.prototype.toISOString = function() {
+  let formatted = oldToISOString.call(this);
+  const nanoseconds = this._nanoseconds || this._d._nanoseconds;
+  if (nanoseconds) {
+    let nanoString = '';
+    const numberOfZeros = 6 - nanoseconds.length;
+    nanoString += nanoseconds;
+    for (let i = 0; i < numberOfZeros; i++) {
+      nanoString += '0';
+    }
+    formatted = formatted.replace('Z', nanoString + 'Z');
+  }
+  return formatted;
+};
 
 import { coreModule, angularModules } from 'app/core/core_module';
 import { registerAngularDirectives } from 'app/core/core';

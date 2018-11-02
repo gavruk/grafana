@@ -13,6 +13,8 @@ kbn.regexEscape = value => {
 
 kbn.round_interval = interval => {
   switch (true) {
+    case interval < 1:
+      return interval;
     // 0.015s
     case interval < 15:
       return 10; // 0.01s
@@ -123,12 +125,17 @@ kbn.secondsToHms = seconds => {
   if (numseconds) {
     return numseconds + 's';
   }
-  const nummilliseconds = Math.floor(seconds * 1000.0);
+  const nummilliseconds = Math.floor(((((seconds % 31536000) % 86400) % 3600) / 60) % 1000);
   if (nummilliseconds) {
     return nummilliseconds + 'ms';
   }
 
-  return 'less than a millisecond'; //'just now' //or other string you like;
+  const numnanoseconds = Math.floor(seconds * 1000.0 * 1000.0 * 1000.0);
+  if (numnanoseconds) {
+    return numnanoseconds + 'ns';
+  }
+
+  return 'less than a nanosecond'; //'just now' //or other string you like;
 };
 
 kbn.secondsToHhmmss = seconds => {
@@ -154,7 +161,7 @@ kbn.addslashes = str => {
   return str;
 };
 
-kbn.interval_regex = /(\d+(?:\.\d+)?)(ms|[Mwdhmsy])/;
+kbn.interval_regex = /(\d+(?:\.\d+)?)(ms|ns|[Mwdhmsy])/;
 
 // histogram & trends
 kbn.intervals_in_seconds = {
@@ -166,10 +173,11 @@ kbn.intervals_in_seconds = {
   m: 60,
   s: 1,
   ms: 0.001,
+  ns: 0.000000001,
 };
 
 kbn.calculateInterval = (range, resolution, lowLimitInterval) => {
-  let lowLimitMs = 1; // 1 millisecond default low limit
+  let lowLimitMs = 1 / 1000000; // 1 nanosecond default low limit
   let intervalMs;
 
   if (lowLimitInterval) {
@@ -183,11 +191,16 @@ kbn.calculateInterval = (range, resolution, lowLimitInterval) => {
   if (lowLimitMs > intervalMs) {
     intervalMs = lowLimitMs;
   }
-
-  return {
+  const result = {
+    intervalNs: 0,
     intervalMs: intervalMs,
     interval: kbn.secondsToHms(intervalMs / 1000),
   };
+  if (intervalMs < 1) {
+    result.intervalMs = 0;
+    result.intervalNs = Math.round(intervalMs * 1e6);
+  }
+  return result;
 };
 
 kbn.describe_interval = str => {
