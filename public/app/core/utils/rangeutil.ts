@@ -39,6 +39,9 @@ const rangeOptions = [
   { from: 'now-1M/M', to: 'now-1M/M', display: 'Previous month', section: 1 },
   { from: 'now-1y/y', to: 'now-1y/y', display: 'Previous year', section: 1 },
 
+  { from: 'now-1s', to: 'now', display: 'Last 1 second', section: 3 },
+  { from: 'now-10s', to: 'now', display: 'Last 10 seconds', section: 3 },
+  { from: 'now-1m', to: 'now', display: 'Last 1 minute', section: 3 },
   { from: 'now-5m', to: 'now', display: 'Last 5 minutes', section: 3 },
   { from: 'now-15m', to: 'now', display: 'Last 15 minutes', section: 3 },
   { from: 'now-30m', to: 'now', display: 'Last 30 minutes', section: 3 },

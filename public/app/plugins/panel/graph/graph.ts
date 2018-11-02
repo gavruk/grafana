@@ -26,6 +26,7 @@ import { GraphCtrl } from './module';
 class GraphElement {
   ctrl: GraphCtrl;
   tooltip: any;
+  timestampPart: any;
   dashboard: any;
   annotations: object[];
   panel: any;
@@ -125,16 +126,30 @@ class GraphElement {
       return;
     }
 
+    let from = ranges.xaxis.from.toString();
+    while (from.split('.')[0].length < 13) {
+      from = '0' + from;
+    }
+    let to = ranges.xaxis.to.toString();
+    while (to.split('.')[0].length < 13) {
+      to = '0' + to;
+    }
+    if (this.timestampPart) {
+      from = `${this.timestampPart}${from.replace('.', '')}`;
+      from = `${from.substr(0, 13)}.${from.substr(13, 6)}`;
+      to = `${this.timestampPart}${to.replace('.', '')}`;
+      to = `${to.substr(0, 13)}.${to.substr(13, 6)}`;
+    }
     if ((ranges.ctrlKey || ranges.metaKey) && (this.dashboard.meta.canEdit || this.dashboard.meta.canMakeEditable)) {
       // Add annotation
       setTimeout(() => {
-        this.eventManager.updateTime(ranges.xaxis);
+        this.eventManager.updateTime({ from, to });
       }, 100);
     } else {
       this.scope.$apply(() => {
         this.timeSrv.setTime({
-          from: moment.utc(ranges.xaxis.from),
-          to: moment.utc(ranges.xaxis.to),
+          from: moment.utc(from),
+          to: moment.utc(to),
         });
       });
     }
@@ -338,8 +353,45 @@ class GraphElement {
   }
 
   callPlot(options, incrementRenderCounter) {
+    const copied = [...this.sortedSeries];
+    let timestampPart;
+
+    copied.forEach(c => {
+      for (let i = 0; i < c.data.length; i++) {
+        if (!c.datapoints[i] || this.ctrl.panel.xaxis.mode !== 'time') {
+          continue;
+        }
+        if (!timestampPart && options.xaxis.isNano) {
+          timestampPart = c.datapoints[0][1].toString().substr(0, 6);
+        }
+
+        if (options.xaxis.isNano) {
+          let secondPart = c.datapoints[i][3].toString();
+          while (secondPart.length < 9) {
+            secondPart = '0' + secondPart;
+          }
+          c.data[i][0] = +`${c.datapoints[i][1].toString().substr(6, 4)}${secondPart}`;
+        } else {
+          if (c.datapoints[i].length >= 5) {
+            let decimalPart = c.datapoints[i][4].toString();
+            while (decimalPart.length < 6) {
+              decimalPart = '0' + decimalPart;
+            }
+            c.data[i][0] = `${c.datapoints[i][1]}.${decimalPart}`;
+          } else {
+            c.data[i][0] = c.datapoints[i][1];
+          }
+        }
+      }
+    });
+    if (!timestampPart && options.xaxis.isNano) {
+      const r = this.timeSrv.timeRangeForUrl();
+      timestampPart = r.from.substr(0, 6);
+    }
+    this.timestampPart = timestampPart;
+    this.scope.timestampPart = timestampPart;
     try {
-      this.plot = $.plot(this.elem, this.sortedSeries, options);
+      this.plot = $.plot(this.elem, copied, options);
       if (this.ctrl.renderError) {
         delete this.ctrl.error;
         delete this.ctrl.inspector;
@@ -447,20 +499,73 @@ class GraphElement {
   }
 
   addTimeAxis(options) {
-    const ticks = this.panelWidth / 100;
-    const min = _.isUndefined(this.ctrl.range.from) ? null : this.ctrl.range.from.valueOf();
-    const max = _.isUndefined(this.ctrl.range.to) ? null : this.ctrl.range.to.valueOf();
+    const ticks = this.panelWidth / 150;
+    let min = _.isUndefined(this.ctrl.range.from) ? null : this.ctrl.range.from.valueOf();
+    let max = _.isUndefined(this.ctrl.range.to) ? null : this.ctrl.range.to.valueOf();
 
-    options.xaxis = {
-      timezone: this.dashboard.getTimezone(),
-      show: this.panel.xaxis.show,
-      mode: 'time',
-      min: min,
-      max: max,
-      label: 'Datetime',
-      ticks: ticks,
-      timeformat: this.time_format(ticks, min, max),
-    };
+    if (this.ctrl.intervalMs === undefined || this.ctrl.intervalMs >= 1) {
+      options.xaxis = {
+        timezone: this.dashboard.getTimezone(),
+        show: this.panel.xaxis.show,
+        mode: 'time',
+        min: min,
+        max: max,
+        label: 'Datetime',
+        ticks: ticks,
+        timeformat: this.time_format(ticks, min, max),
+      };
+    } else {
+      if (this.ctrl.range.from && this.ctrl.range.from._d._nanoseconds) {
+        if (min.toString().indexOf('.') > 1) {
+          min = min.toString();
+        } else {
+          min = min.toString() + this.ctrl.range.from._d._nanoseconds;
+        }
+      }
+      if (this.ctrl.range.to && this.ctrl.range.to._d._nanoseconds) {
+        if (max.toString().indexOf('.') > 1) {
+          max = max.toString();
+        } else {
+          max = max.toString() + this.ctrl.range.to._d._nanoseconds;
+        }
+      }
+      if (typeof min === 'number') {
+        min = min.toString();
+      }
+      if (typeof max === 'number') {
+        max = max.toString();
+      }
+      while (min.length < 19) {
+        min += '0';
+      }
+      while (max.length < 19) {
+        max += '0';
+      }
+      min = min.substr(6);
+      max = max.substr(6);
+
+      options.xaxis = {
+        timezone: this.dashboard.getTimezone(),
+        show: this.panel.xaxis.show,
+        //mode: 'time',
+        min: +min,
+        max: +max,
+        label: 'Datetime',
+        isNano: true,
+        ticks: ticks,
+        tickFormatter: (tick, series) => {
+          let tickString = tick.toString();
+          while (tickString.length < 13) {
+            tickString = '0' + tickString;
+          }
+          const s = `${this.timestampPart}${tickString}`;
+          const timestamp = s.substring(0, 13);
+          const nanos = s.substring(13);
+          const formatted = moment(+timestamp).format('HH:mm:ss.SSS');
+          return formatted + ',' + nanos.substring(0, 3);
+        },
+      };
+    }
   }
 
   addXSeriesAxis(options) {
@@ -711,7 +816,7 @@ class GraphElement {
 
   time_format(ticks, min, max) {
     if (min && max && ticks) {
-      const range = max - min;
+      const range = +max - +min;
       const secPerTick = range / ticks / 1000;
       // Need have 10 milisecond margin on the day range
       // As sometimes last 24 hour dashboard evaluates to more than 86400000

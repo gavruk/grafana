@@ -82,6 +82,7 @@ export interface DataQueryOptions {
   cacheTimeout?: string;
   interval: string;
   intervalMs: number;
+  intervalNs: number;
   maxDataPoints: number;
   scopedVars: object;
 }

@@ -50,7 +50,7 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
   };
 
   this.renderAndShow = (absoluteTime, innerHtml, pos, xMode) => {
-    if (xMode === 'time') {
+    if (xMode === 'time' || absoluteTime) {
       innerHtml = '<div class="graph-tooltip-time">' + absoluteTime + '</div>' + innerHtml;
     }
     $tooltip.html(innerHtml).place_tt(pos.pageX + 20, pos.pageY);
@@ -227,7 +227,18 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
 
       seriesHtml = '';
 
-      absoluteTime = dashboard.formatDate(seriesHoverInfo.time, tooltipFormat);
+      let date = seriesHoverInfo.time;
+      let nanos = '';
+      if (typeof date === 'number') {
+        let dateString = date.toString();
+        while (dateString.length < 13) {
+          dateString = '0' + dateString;
+        }
+        date = `${scope.timestampPart}${dateString}`;
+        nanos = date.substring(date.length - 6, date.length);
+        date = +date.substring(0, date.length - 6);
+      }
+      absoluteTime = dashboard.formatDate(date, tooltipFormat);
 
       // Dynamically reorder the hovercard for the current time point if the
       // option is enabled.
@@ -265,6 +276,7 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
         plot.highlight(hoverInfo.index, hoverInfo.hoverIndex);
       }
 
+      absoluteTime = absoluteTime.replace('Z', `${nanos}Z`);
       self.renderAndShow(absoluteTime, seriesHtml, pos, xMode);
     } else if (item) {
       // single series tooltip
@@ -281,10 +293,22 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
 
       value = series.formatValue(value);
 
-      absoluteTime = dashboard.formatDate(item.datapoint[0], tooltipFormat);
+      let date = item.datapoint[0];
+      let nanos = '';
+      if (typeof date === 'number') {
+        let dateString = date.toString();
+        while (dateString.length < 13) {
+          dateString = '0' + dateString;
+        }
+        date = `${scope.timestampPart}${dateString}`;
+        nanos = date.substring(date.length - 6, date.length);
+        date = +date.substring(0, date.length - 6);
+      }
+      absoluteTime = dashboard.formatDate(date, tooltipFormat);
 
       group += '<div class="graph-tooltip-value">' + value + '</div>';
 
+      absoluteTime = absoluteTime.replace('Z', `${nanos}Z`);
       self.renderAndShow(absoluteTime, group, pos, xMode);
     } else {
       // no hit

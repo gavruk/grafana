@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import moment from 'moment';
 
-const units = ['y', 'M', 'w', 'd', 'h', 'm', 's'];
+const units = ['y', 'M', 'w', 'd', 'h', 'm', 's', 'u'];
 
 export function parse(text, roundUp?, timezone?) {
   if (!text) {

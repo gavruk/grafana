@@ -22,6 +22,7 @@ class MetricsPanelCtrl extends PanelCtrl {
   range: any;
   interval: any;
   intervalMs: any;
+  intervalNs: any;
   resolution: any;
   timeInfo: any;
   skipDataOnInit: boolean;
@@ -161,6 +162,7 @@ class MetricsPanelCtrl extends PanelCtrl {
     const res = kbn.calculateInterval(this.range, this.resolution, intervalOverride);
     this.interval = res.interval;
     this.intervalMs = res.intervalMs;
+    this.intervalNs = res.intervalNs;
   }
 
   applyPanelTimeOverrides() {
@@ -227,6 +229,7 @@ class MetricsPanelCtrl extends PanelCtrl {
       rangeRaw: this.range.raw,
       interval: this.interval,
       intervalMs: this.intervalMs,
+      intervalNs: this.intervalNs,
       targets: this.panel.targets,
       maxDataPoints: this.resolution,
       scopedVars: scopedVars,
