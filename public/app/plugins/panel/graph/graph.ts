@@ -26,6 +26,7 @@ import { GraphCtrl } from './module';
 class GraphElement {
   ctrl: GraphCtrl;
   tooltip: any;
+  timestampPart: any;
   dashboard: any;
   annotations: object[];
   panel: any;
@@ -123,6 +124,13 @@ class GraphElement {
       // Skip if panel in histogram or series mode
       this.plot.clearSelection();
       return;
+    }
+
+    if (typeof ranges.xaxis.from === 'number' && this.timestampPart) {
+      ranges.xaxis.from = `${this.timestampPart}${ranges.xaxis.from.toString().replace('.', '')}`;
+      ranges.xaxis.from = `${ranges.xaxis.from.substr(0, 13)}.${ranges.xaxis.from.substr(13, 6)}`;
+      ranges.xaxis.to = `${this.timestampPart}${ranges.xaxis.to.toString().replace('.', '')}`;
+      ranges.xaxis.to = `${ranges.xaxis.to.substr(0, 13)}.${ranges.xaxis.to.substr(13, 6)}`;
     }
     if ((ranges.ctrlKey || ranges.metaKey) && (this.dashboard.meta.canEdit || this.dashboard.meta.canMakeEditable)) {
       // Add annotation
@@ -338,15 +346,28 @@ class GraphElement {
 
   callPlot(options, incrementRenderCounter) {
     const copied = [...this.sortedSeries];
+    let timestampPart;
+
     copied.forEach(c => {
       for (let i = 0; i < c.data.length; i++) {
+        if (!timestampPart && options.xaxis.isNano) {
+          timestampPart = c.datapoints[0][1].toString().substr(0, 6);
+        }
         let decimalPart = c.datapoints[i][4].toString();
         while (decimalPart.length !== 6) {
           decimalPart = '0' + decimalPart;
         }
         c.data[i][0] = `${c.datapoints[i][1]}.${decimalPart}`;
+
+        if (options.xaxis.isNano) {
+          c.data[i][0] = +`${c.datapoints[i][1].toString().substr(6, 4)}${c.datapoints[i][3]}`;
+        } else {
+          c.data[i][0] = `${c.datapoints[i][1]}.${decimalPart}`;
+        }
       }
     });
+    this.timestampPart = timestampPart;
+    this.scope.timestampPart = timestampPart;
     try {
       this.plot = $.plot(this.elem, copied, options);
       if (this.ctrl.renderError) {
@@ -491,14 +512,16 @@ class GraphElement {
         timezone: this.dashboard.getTimezone(),
         show: this.panel.xaxis.show,
         //mode: 'time',
-        min: min,
-        max: max,
+        //min: min,
+        //max: max,
         label: 'Datetime',
+        isNano: true,
         ticks: ticks,
         tickFormatter: (tick, series) => {
-          const decimalPart = Math.round((tick % 1) * 1e4) / 1e4;
-          const msPart = Math.round(((tick / 1000) % 1) * 1000);
-          return msPart + decimalPart;
+          return tick;
+          //const decimalPart = Math.round((tick % 1) * 1e4) / 1e4;
+          //const msPart = Math.round(((tick / 1000) % 1) * 1000);
+          //return msPart + decimalPart;
         },
       };
     }

@@ -50,7 +50,7 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
   };
 
   this.renderAndShow = (absoluteTime, innerHtml, pos, xMode) => {
-    if (xMode === 'time') {
+    if (xMode === 'time' || absoluteTime) {
       innerHtml = '<div class="graph-tooltip-time">' + absoluteTime + '</div>' + innerHtml;
     }
     $tooltip.html(innerHtml).place_tt(pos.pageX + 20, pos.pageY);
@@ -227,7 +227,15 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
 
       seriesHtml = '';
 
-      absoluteTime = dashboard.formatDate(seriesHoverInfo.time, tooltipFormat);
+      console.log(scope);
+      let date = seriesHoverInfo.time;
+      if (typeof date === 'number') {
+        date = `${scope.timestampPart}${date}`;
+        console.log(date);
+        date = +date.substring(0, date.length - 6);
+        console.log(date);
+      }
+      absoluteTime = dashboard.formatDate(date, tooltipFormat);
 
       // Dynamically reorder the hovercard for the current time point if the
       // option is enabled.
@@ -281,7 +289,12 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
 
       value = series.formatValue(value);
 
-      absoluteTime = dashboard.formatDate(item.datapoint[0], tooltipFormat);
+      let date = item.datapoint[0];
+      if (typeof date === 'number') {
+        date = `${scope.timestampPart}${date}`;
+        date = +date.substring(0, date.length - 6);
+      }
+      absoluteTime = dashboard.formatDate(date, tooltipFormat);
 
       group += '<div class="graph-tooltip-value">' + value + '</div>';
 
