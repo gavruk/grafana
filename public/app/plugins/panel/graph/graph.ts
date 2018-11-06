@@ -353,15 +353,14 @@ class GraphElement {
         if (!timestampPart && options.xaxis.isNano) {
           timestampPart = c.datapoints[0][1].toString().substr(0, 6);
         }
-        let decimalPart = c.datapoints[i][4].toString();
-        while (decimalPart.length !== 6) {
-          decimalPart = '0' + decimalPart;
-        }
-        c.data[i][0] = `${c.datapoints[i][1]}.${decimalPart}`;
 
         if (options.xaxis.isNano) {
           c.data[i][0] = +`${c.datapoints[i][1].toString().substr(6, 4)}${c.datapoints[i][3]}`;
         } else {
+          let decimalPart = c.datapoints[i][4].toString();
+          while (decimalPart.length < 6) {
+            decimalPart = '0' + decimalPart;
+          }
           c.data[i][0] = `${c.datapoints[i][1]}.${decimalPart}`;
         }
       }
@@ -497,23 +496,31 @@ class GraphElement {
         if (min.toString().indexOf('.') > 1) {
           min = min.toString();
         } else {
-          min = min.toString() + '.' + this.ctrl.range.from._d._nanoseconds;
+          min = min.toString() + this.ctrl.range.from._d._nanoseconds;
         }
       }
       if (this.ctrl.range.to && this.ctrl.range.to._d._nanoseconds) {
         if (max.toString().indexOf('.') > 1) {
           max = max.toString();
         } else {
-          max = max.toString() + '.' + this.ctrl.range.to._d._nanoseconds;
+          max = max.toString() + this.ctrl.range.to._d._nanoseconds;
         }
       }
+      while (min.length < 19) {
+        min += '0';
+      }
+      while (max.length < 19) {
+        max += '0';
+      }
+      min = min.substr(6);
+      max = max.substr(6);
 
       options.xaxis = {
         timezone: this.dashboard.getTimezone(),
         show: this.panel.xaxis.show,
         //mode: 'time',
-        //min: min,
-        //max: max,
+        min: +min,
+        max: +max,
         label: 'Datetime',
         isNano: true,
         ticks: ticks,

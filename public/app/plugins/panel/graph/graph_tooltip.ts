@@ -227,13 +227,10 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
 
       seriesHtml = '';
 
-      console.log(scope);
       let date = seriesHoverInfo.time;
       if (typeof date === 'number') {
         date = `${scope.timestampPart}${date}`;
-        console.log(date);
         date = +date.substring(0, date.length - 6);
-        console.log(date);
       }
       absoluteTime = dashboard.formatDate(date, tooltipFormat);
 
