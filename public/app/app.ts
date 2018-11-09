@@ -27,17 +27,49 @@ _.move = (array, fromIndex, toIndex) => {
 };
 // @ts-ignore
 moment.createFromInputFallback = config => {
-  config._d = new Date(Math.round(config._i));
+  if (typeof config._i === 'string') {
+    let nanoseconds = '0';
+    const parts = config._i.split('.');
+    if (parts.length === 2) {
+      nanoseconds = parts[1];
+    }
+    config._d = new Date(+parts[0]);
+    config._nanoseconds = nanoseconds;
+    config._d._nanoseconds = nanoseconds;
+  } else {
+    config._d = new Date(Math.round(config._i));
+  }
 };
 const oldUtc = moment.prototype.utc;
 moment.prototype.utc = function(d) {
   let nanoseconds = this._nanoseconds || this._d._nanoseconds;
   if (!nanoseconds) {
-    nanoseconds = Math.round((this._i % 1) * 1e6);
+    if (typeof this._i === 'string') {
+      const parts = this._i.split('.');
+      if (parts.length === 2) {
+        nanoseconds = parts[1];
+      } else {
+        nanoseconds = '0';
+      }
+      //this._i = +parts[0];
+    } else {
+      nanoseconds = Math.round((this._i % 1) * 1e6).toString();
+    }
   }
+  let nanoString = '';
+  const numberOfZeros = 6 - nanoseconds.length;
+  for (let i = 0; i < numberOfZeros; i++) {
+    nanoString += '0';
+  }
+  nanoString += nanoseconds;
+
   const date = oldUtc.call(this, d);
-  date._nanoseconds = nanoseconds.toString();
-  date._d._nanoseconds = nanoseconds.toString();
+  this._data = {};
+  this._data._nanoseconds = nanoString;
+  date._data = {};
+  date._data._nanoseconds = nanoString;
+  date._nanoseconds = nanoString;
+  date._d._nanoseconds = nanoString;
   return date;
 };
 const oldToISOString = moment.prototype.toISOString;
@@ -47,10 +79,10 @@ moment.prototype.toISOString = function() {
   if (nanoseconds) {
     let nanoString = '';
     const numberOfZeros = 6 - nanoseconds.length;
-    nanoString += nanoseconds;
     for (let i = 0; i < numberOfZeros; i++) {
       nanoString += '0';
     }
+    nanoString += nanoseconds;
     formatted = formatted.replace('Z', nanoString + 'Z');
   }
   return formatted;

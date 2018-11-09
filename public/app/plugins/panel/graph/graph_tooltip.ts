@@ -228,8 +228,10 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
       seriesHtml = '';
 
       let date = seriesHoverInfo.time;
+      let nanos = '';
       if (typeof date === 'number') {
         date = `${scope.timestampPart}${date}`;
+        nanos = date.substring(date.length - 6, date.length);
         date = +date.substring(0, date.length - 6);
       }
       absoluteTime = dashboard.formatDate(date, tooltipFormat);
@@ -270,6 +272,7 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
         plot.highlight(hoverInfo.index, hoverInfo.hoverIndex);
       }
 
+      absoluteTime = absoluteTime.replace('Z', `${nanos}Z`);
       self.renderAndShow(absoluteTime, seriesHtml, pos, xMode);
     } else if (item) {
       // single series tooltip
@@ -287,14 +290,17 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
       value = series.formatValue(value);
 
       let date = item.datapoint[0];
+      let nanos = '';
       if (typeof date === 'number') {
         date = `${scope.timestampPart}${date}`;
+        nanos = date.substring(date.length - 6, date.length);
         date = +date.substring(0, date.length - 6);
       }
       absoluteTime = dashboard.formatDate(date, tooltipFormat);
 
       group += '<div class="graph-tooltip-value">' + value + '</div>';
 
+      absoluteTime = absoluteTime.replace('Z', `${nanos}Z`);
       self.renderAndShow(absoluteTime, group, pos, xMode);
     } else {
       // no hit

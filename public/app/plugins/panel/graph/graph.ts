@@ -506,6 +506,12 @@ class GraphElement {
           max = max.toString() + this.ctrl.range.to._d._nanoseconds;
         }
       }
+      if (typeof min === 'number') {
+        min = min.toString();
+      }
+      if (typeof max === 'number') {
+        max = max.toString();
+      }
       while (min.length < 19) {
         min += '0';
       }
