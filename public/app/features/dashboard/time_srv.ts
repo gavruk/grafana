@@ -244,7 +244,10 @@ export class TimeSrv {
   zoomOut(e, factor) {
     const range = this.timeRange();
 
-    const timespan = range.to.valueOf() - range.from.valueOf();
+    let timespan = range.to.valueOf() - range.from.valueOf();
+    if (timespan === 0) {
+      timespan = 1;
+    }
     const center = range.to.valueOf() - timespan / 2;
 
     const to = center + timespan * factor / 2;

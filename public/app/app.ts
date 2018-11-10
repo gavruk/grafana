@@ -64,10 +64,6 @@ moment.prototype.utc = function(d) {
   nanoString += nanoseconds;
 
   const date = oldUtc.call(this, d);
-  this._data = {};
-  this._data._nanoseconds = nanoString;
-  date._data = {};
-  date._data._nanoseconds = nanoString;
   date._nanoseconds = nanoString;
   date._d._nanoseconds = nanoString;
   return date;

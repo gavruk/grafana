@@ -531,7 +531,7 @@ class GraphElement {
         isNano: true,
         ticks: ticks,
         tickFormatter: (tick, series) => {
-          return tick;
+          return tick.toString().substring(4);
           //const decimalPart = Math.round((tick % 1) * 1e4) / 1e4;
           //const msPart = Math.round(((tick / 1000) % 1) * 1000);
           //return msPart + decimalPart;
