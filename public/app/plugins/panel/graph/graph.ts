@@ -355,7 +355,11 @@ class GraphElement {
         }
 
         if (options.xaxis.isNano) {
-          c.data[i][0] = +`${c.datapoints[i][1].toString().substr(6, 4)}${c.datapoints[i][3]}`;
+          let secondPart = c.datapoints[i][3].toString();
+          while (secondPart.length < 9) {
+            secondPart = '0' + secondPart;
+          }
+          c.data[i][0] = +`${c.datapoints[i][1].toString().substr(6, 4)}${secondPart}`;
         } else {
           let decimalPart = c.datapoints[i][4].toString();
           while (decimalPart.length < 6) {
