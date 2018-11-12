@@ -369,7 +369,7 @@ class GraphElement {
         }
       }
     });
-    if (!timestampPart) {
+    if (!timestampPart && options.xaxis.isNano) {
       const r = this.timeSrv.timeRangeForUrl();
       timestampPart = r.from.substr(0, 6);
     }
