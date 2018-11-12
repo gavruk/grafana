@@ -369,6 +369,10 @@ class GraphElement {
         }
       }
     });
+    if (!timestampPart) {
+      const r = this.timeSrv.timeRangeForUrl();
+      timestampPart = r.from.substr(0, 6);
+    }
     this.timestampPart = timestampPart;
     this.scope.timestampPart = timestampPart;
     try {
@@ -480,7 +484,7 @@ class GraphElement {
   }
 
   addTimeAxis(options) {
-    const ticks = this.panelWidth / 100;
+    const ticks = this.panelWidth / 150;
     let min = _.isUndefined(this.ctrl.range.from) ? null : this.ctrl.range.from.valueOf();
     let max = _.isUndefined(this.ctrl.range.to) ? null : this.ctrl.range.to.valueOf();
 
@@ -535,10 +539,11 @@ class GraphElement {
         isNano: true,
         ticks: ticks,
         tickFormatter: (tick, series) => {
-          return tick.toString().substring(4);
-          //const decimalPart = Math.round((tick % 1) * 1e4) / 1e4;
-          //const msPart = Math.round(((tick / 1000) % 1) * 1000);
-          //return msPart + decimalPart;
+          const s = `${this.timestampPart}${tick}`;
+          const timestamp = s.substring(0, 13);
+          const nanos = s.substring(13);
+          const formatted = moment(+timestamp).format('HH:mm:ss.SSS');
+          return formatted + ',' + nanos.substring(0, 3);
         },
       };
     }
