@@ -126,22 +126,30 @@ class GraphElement {
       return;
     }
 
-    if (typeof ranges.xaxis.from === 'number' && this.timestampPart) {
-      ranges.xaxis.from = `${this.timestampPart}${ranges.xaxis.from.toString().replace('.', '')}`;
-      ranges.xaxis.from = `${ranges.xaxis.from.substr(0, 13)}.${ranges.xaxis.from.substr(13, 6)}`;
-      ranges.xaxis.to = `${this.timestampPart}${ranges.xaxis.to.toString().replace('.', '')}`;
-      ranges.xaxis.to = `${ranges.xaxis.to.substr(0, 13)}.${ranges.xaxis.to.substr(13, 6)}`;
+    let from = ranges.xaxis.from.toString();
+    while (from.split('.')[0].length < 13) {
+      from = '0' + from;
+    }
+    let to = ranges.xaxis.to.toString();
+    while (to.split('.')[0].length < 13) {
+      to = '0' + to;
+    }
+    if (this.timestampPart) {
+      from = `${this.timestampPart}${from.replace('.', '')}`;
+      from = `${from.substr(0, 13)}.${from.substr(13, 6)}`;
+      to = `${this.timestampPart}${to.replace('.', '')}`;
+      to = `${to.substr(0, 13)}.${to.substr(13, 6)}`;
     }
     if ((ranges.ctrlKey || ranges.metaKey) && (this.dashboard.meta.canEdit || this.dashboard.meta.canMakeEditable)) {
       // Add annotation
       setTimeout(() => {
-        this.eventManager.updateTime(ranges.xaxis);
+        this.eventManager.updateTime({ from, to });
       }, 100);
     } else {
       this.scope.$apply(() => {
         this.timeSrv.setTime({
-          from: moment.utc(ranges.xaxis.from),
-          to: moment.utc(ranges.xaxis.to),
+          from: moment.utc(from),
+          to: moment.utc(to),
         });
       });
     }
@@ -539,7 +547,11 @@ class GraphElement {
         isNano: true,
         ticks: ticks,
         tickFormatter: (tick, series) => {
-          const s = `${this.timestampPart}${tick}`;
+          let tickString = tick.toString();
+          while (tickString.length < 13) {
+            tickString = '0' + tickString;
+          }
+          const s = `${this.timestampPart}${tickString}`;
           const timestamp = s.substring(0, 13);
           const nanos = s.substring(13);
           const formatted = moment(+timestamp).format('HH:mm:ss.SSS');

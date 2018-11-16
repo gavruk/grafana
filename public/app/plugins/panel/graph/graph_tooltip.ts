@@ -230,7 +230,11 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
       let date = seriesHoverInfo.time;
       let nanos = '';
       if (typeof date === 'number') {
-        date = `${scope.timestampPart}${date}`;
+        let dateString = date.toString();
+        while (dateString.length < 13) {
+          dateString = '0' + dateString;
+        }
+        date = `${scope.timestampPart}${dateString}`;
         nanos = date.substring(date.length - 6, date.length);
         date = +date.substring(0, date.length - 6);
       }
@@ -292,7 +296,11 @@ export default function GraphTooltip(this: any, elem, dashboard, scope, getSerie
       let date = item.datapoint[0];
       let nanos = '';
       if (typeof date === 'number') {
-        date = `${scope.timestampPart}${date}`;
+        let dateString = date.toString();
+        while (dateString.length < 13) {
+          dateString = '0' + dateString;
+        }
+        date = `${scope.timestampPart}${dateString}`;
         nanos = date.substring(date.length - 6, date.length);
         date = +date.substring(0, date.length - 6);
       }
