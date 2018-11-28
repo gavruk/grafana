@@ -41,7 +41,7 @@ moment.createFromInputFallback = config => {
   }
 };
 const oldUtc = moment.prototype.utc;
-moment.prototype.utc = function(d) {
+moment.prototype.utc = function(d, format) {
   let nanoseconds = this._nanoseconds || this._d._nanoseconds;
   if (!nanoseconds) {
     if (typeof this._i === 'string') {
@@ -63,7 +63,7 @@ moment.prototype.utc = function(d) {
   }
   nanoString += nanoseconds;
 
-  const date = oldUtc.call(this, d);
+  const date = oldUtc.call(this, d, format);
   date._nanoseconds = nanoString;
   date._d._nanoseconds = nanoString;
   return date;

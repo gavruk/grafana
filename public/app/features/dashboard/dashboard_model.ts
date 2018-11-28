@@ -690,10 +690,12 @@ export class DashboardModel {
     }
     if (typeof date === 'number') {
       const nanos = date % 1;
-      date = moment(Math.round(date));
-      date._nanoseconds = nanos;
-      date._d._nanoseconds = nanos;
-      return date.toISOString();
+      if (nanos !== 0) {
+        date = moment(Math.round(date));
+        date._nanoseconds = nanos;
+        date._d._nanoseconds = nanos;
+        return date.toISOString();
+      }
     }
     format = format || 'YYYY-MM-DD HH:mm:ss';
     const timezone = this.getTimezone();

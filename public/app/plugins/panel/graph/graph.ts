@@ -362,6 +362,9 @@ class GraphElement {
           timestampPart = c.datapoints[0][1].toString().substr(0, 6);
         }
 
+        if (!c.datapoints[i] || this.ctrl.panel.xaxis.mode !== 'series') {
+          continue;
+        }
         if (options.xaxis.isNano) {
           let secondPart = c.datapoints[i][3].toString();
           while (secondPart.length < 9) {
@@ -369,11 +372,15 @@ class GraphElement {
           }
           c.data[i][0] = +`${c.datapoints[i][1].toString().substr(6, 4)}${secondPart}`;
         } else {
-          let decimalPart = c.datapoints[i][4].toString();
-          while (decimalPart.length < 6) {
-            decimalPart = '0' + decimalPart;
+          if (c.datapoints[i].length >= 5) {
+            let decimalPart = c.datapoints[i][4].toString();
+            while (decimalPart.length < 6) {
+              decimalPart = '0' + decimalPart;
+            }
+            c.data[i][0] = `${c.datapoints[i][1]}.${decimalPart}`;
+          } else {
+            c.data[i][0] = c.datapoints[i][1];
           }
-          c.data[i][0] = `${c.datapoints[i][1]}.${decimalPart}`;
         }
       }
     });
@@ -496,7 +503,7 @@ class GraphElement {
     let min = _.isUndefined(this.ctrl.range.from) ? null : this.ctrl.range.from.valueOf();
     let max = _.isUndefined(this.ctrl.range.to) ? null : this.ctrl.range.to.valueOf();
 
-    if (this.ctrl.intervalMs >= 1) {
+    if (!this.ctrl.intervalMs || this.ctrl.intervalMs >= 1) {
       options.xaxis = {
         timezone: this.dashboard.getTimezone(),
         show: this.panel.xaxis.show,

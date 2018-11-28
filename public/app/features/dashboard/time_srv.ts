@@ -74,10 +74,10 @@ export class TimeSrv {
       nanoseconds = parts.length === 2 ? parts[1] : null;
     }
     if (value.length === 8) {
-      date = moment.utc(value, 'YYYYMMDD');
+      return moment.utc(value, 'YYYYMMDD');
     }
     if (value.length === 15) {
-      date = moment.utc(value, 'YYYYMMDDTHHmmss');
+      return moment.utc(value, 'YYYYMMDDTHHmmss');
     }
 
     if (!isNaN(value)) {

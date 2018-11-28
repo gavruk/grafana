@@ -125,12 +125,12 @@ kbn.secondsToHms = seconds => {
   if (numseconds) {
     return numseconds + 's';
   }
-  const nummilliseconds = Math.floor(((((seconds % 31536000) % 86400) % 3600) / 60) % 1000);
+  const nummilliseconds = Math.floor(((((seconds % 31536000) % 86400) % 3600) % 60) * 1000);
   if (nummilliseconds) {
     return nummilliseconds + 'ms';
   }
 
-  const numnanoseconds = Math.floor(seconds * 1000.0 * 1000.0 * 1000.0);
+  const numnanoseconds = Math.floor(seconds * 1e9);
   if (numnanoseconds) {
     return numnanoseconds + 'ns';
   }

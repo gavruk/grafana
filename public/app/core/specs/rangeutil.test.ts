@@ -7,7 +7,7 @@ describe('rangeUtil', () => {
     it('when custom settings should return default range list', () => {
       const groups = rangeUtil.getRelativeTimesList({ time_options: [] }, 'Last 5 minutes');
       expect(_.keys(groups).length).toBe(4);
-      expect(groups[3][0].active).toBe(true);
+      expect(groups[3][3].active).toBe(true);
     });
   });
 
